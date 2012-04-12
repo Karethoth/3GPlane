@@ -5,7 +5,7 @@ throttleMin = 0
 throttleMax = 100
 throttleMultiplier = (throttleMax-throttleMin)/100.0
 
-HOST = 'localhost'
+HOST = 'ndirt.com'
 PORT = 1045
 
 
@@ -19,21 +19,22 @@ def Handle():
   global sock
   while 1:
     try:
-      data = sock.recv( 1024 ).strip()
+      data = sock.recv( 1024 ).strip().rstrip( '!' )
       if( len( data ) <= 0 ):
         break
-      data = data.split( ' ' )
     except socket.error, msg:
       break
-    print data
-    if data[0] == "throttle":
-      AdjustThrottle( float(data[1]) )
-    elif data[0] == "TYPE:":
-      sock.sendall( "p" )
-    elif data[0] == "goodluck":
-      break
-    else:
-      continue
+    commands = data.split( '!' )
+    for cmd in commands:
+      data = cmd.strip().split( ' ' )
+      if data[0] == "throttle":
+        AdjustThrottle( float(data[1]) )
+      elif data[0] == "TYPE:":
+        sock.sendall( "p" )
+      elif data[0] == "goodluck":
+        break
+      else:
+        continue
 
 
 def AdjustThrottle( speed ):

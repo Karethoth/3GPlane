@@ -7,18 +7,14 @@ import pygtk
 import gtk
 
 
-HOST, PORT = 'localhost', 1045
+HOST, PORT = 'ndirt.com', 1045
 
 sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 
-#pygame.init()
-#pygame.joystick.init()
-
-joystickEnabled = False
 
 def AdjustThrottle( speed ):
   speed = speed.value
-  cmd = "throttle "+ str(round(speed))+" "
+  cmd = "throttle "+ str(round(speed))+"!"
   #print cmd
   sock.sendall( cmd )
 
@@ -50,6 +46,7 @@ class GUI:
   def main( self ):
     try:
       sock.connect( (HOST,PORT) )
+      sock.setsockopt( socket.IPPROTO_TCP, socket.TCP_NODELAY, 1 )
       sock.sendall( "c" )
       gtk.main()
     finally:
