@@ -1,38 +1,55 @@
-import SocketServer
+import socket
 import serial
 
 throttleMin = 0
 throttleMax = 100
 throttleMultiplier = (throttleMax-throttleMin)/100.0
 
-HOST = ''
+HOST = 'localhost'
 PORT = 1045
 
 
-arduino = serial.Serial( '/dev/ttyUSB3', 9600 )
+arduino = serial.Serial( '/dev/ttyUSB0', 9600 )
 
-class TCPHandler( SocketServer.BaseRequestHandler ):
-  def handle( self ):
-    while 1:
-      self.data = self.request.recv( 1024 ).strip().split( ' ' )
-      if self.data[0] == "throttle":
-        self.AdjustThrottle( float(self.data[1]) )
-      elif self.data[0] == "goodluck":
-        self.finish()
-        break
-      else:
-        break
 
-  def AdjustThrottle( self, speed ):
-    speed = throttleMin + throttleMultiplier * speed
-    cmd = "throttle "+ str(round(speed)) + "!"
-    print cmd
-    if( not arduino.isOpen() ):
-      print( "SERIAL CONNECTION LOST!" )
+sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
+
+
+def Handle():
+  global sock
+  while 1:
+    try:
+      data = sock.recv( 1024 ).strip()
+      if( len( data ) <= 0 ):
+        break
+      data = data.split( ' ' )
+    except socket.error, msg:
+      break
+    print data
+    if data[0] == "throttle":
+      AdjustThrottle( float(data[1]) )
+    elif data[0] == "TYPE:":
+      sock.sendall( "p" )
+    elif data[0] == "goodluck":
+      break
     else:
-      arduino.write( cmd )
-      arduino.flush()
+      continue
 
-if __name__ == "__main__":
-  server = SocketServer.TCPServer( (HOST,PORT), TCPHandler )
-  server.serve_forever()
+
+def AdjustThrottle( speed ):
+  speed = throttleMin + throttleMultiplier * speed
+  cmd = "throttle "+ str(round(speed)) + "!"
+  print cmd
+  if( not arduino.isOpen() ):
+    print( "SERIAL CONNECTION LOST!" )
+  else:
+    arduino.write( cmd )
+    arduino.flush()
+
+
+try:
+  sock.connect( (HOST,PORT) )
+  Handle()
+finally:
+  sock.close()
+

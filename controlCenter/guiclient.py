@@ -45,9 +45,12 @@ class GUI:
     self.throttle.show()
     self.container.show()
     self.window.show()
+
+
   def main( self ):
     try:
       sock.connect( (HOST,PORT) )
+      sock.sendall( "c" )
       gtk.main()
     finally:
       sock.close()
