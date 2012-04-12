@@ -1,24 +1,37 @@
 #include <Servo.h>
+#
 #include "command_h.ino"
-
-char buffer[101];
-int inByte;
-int n;
-
-int escPin = 9;
-int throttle = 20;
-Servo esc;
+#include "command_handler_h.ino"
 
 
-void setup()
-{
-  Serial.begin( 9600 );
-  n = 0;
-  esc.attach( escPin );
-  arm();
+/** DEFAULT VALUES **/
+#define DEFAULT_THROTTLE 20
+#define INI_TIME         5000
+
+/** PINS **/
+#define PIN_ESC          9
+
+
+
+// Define pins
+int escPin = PIN_ESC;
+
+
+
+// Variables for the loop
+char strBuffer[101];
+int  inByte;
+int  strLength = 0;
+
+
+// Function to arm the esc
+void ArmEsc(){
+  SetThrottle( chVars.throttle );
+  delay( chVars.iniTime );
 }
 
-void loop()
+
+void HandleInput()
 {
   if( Serial.available() > 0 )
   {
@@ -27,71 +40,44 @@ void loop()
         inByte == '\0' ||
         inByte == '!' )
     {
-      int length = n;
-      buffer[n+1] = 0;
-      n = 0;
-      /*Serial.println();*/
-      /*Serial.print( "Received: " );*/
-      /*Serial.println( buffer );*/
-      struct sCommand *cmd = LineToCommand( buffer );
-      /*Serial.print( "command was: " );*/
-      /*Serial.println( cmd->command );*/
-      /*if( cmd->argc > 0 )*/
-      /*{*/
-      /*  Serial.print( "Arg1: " );*/
-      /*  Serial.println( cmd->args[0] );*/
-      /*  if( cmd->argc > 1 )*/
-      /*  {*/
-      /*    Serial.print( "Arg2: " );*/
-      /*    Serial.println( cmd->args[1] );*/
-      /*  }*/
-      /*}*/
+      int length = strLength;
+      strBuffer[strLength+1] = 0;
+
+      struct sCommand *cmd = LineToCommand( strBuffer );
+
       HandleCommand( cmd );
       FreeCommand( cmd );
-      memset( buffer, 0, length );
-      /*Serial.println();*/
+
+      memset( strBuffer, 0, strLength );
+      strLength = 0;
     }
     else
     {
-      buffer[n++] = inByte;
+      strBuffer[strLength++] = inByte;
     }
   }
-  //setSpeed( throttle );
 }
 
 
-void arm(){
-  // arm the speed controller, modify as necessary for your ESC  
-  setSpeed( 20 );
-  delay( 10000 ); //delay 10 second,  some speed controllers may need longer
-}
-
-
-void setSpeed( int speed ){
-  // speed is from 0 to 100 where 0 is off and 100 is maximum speed
-  //the following maps speed values of 0-100 to angles from 0-180,
-  // some speed controllers may need different values, see the ESC instructions
-  int angle = map( speed, 0, 100, 0, 180 );
-  esc.write( angle );    
-}
-
-
-
-
-void HandleCommand( struct sCommand *cmd )
+void setup()
 {
-  // THROTTLE
-  if( strcmp( cmd->command, "throttle" ) == 0 &&
-      cmd->argc >= 1 )
-  {
-    throttle = atoi( cmd->args[0] );
-    setSpeed( throttle );
-  }
+  // Basic settings
+  chVars.throttle = DEFAULT_THROTTLE;
+  chVars.iniTime  = INI_TIME;
 
-  // GETTHROTTLE
-  else if( strcmp( cmd->command, "getThrottle" ) == 0 )
-  {
-    Serial.print( "Throttle: " );
-    Serial.println( throttle );
-  }
+  // Set up the serial connection
+  Serial.begin( 9600 );
+
+  // Attach the esc
+  chVars.esc.attach( escPin );
+
+  // Arm the esc
+  ArmEsc();
 }
+
+
+void loop()
+{
+  HandleInput();
+}
+
