@@ -4,7 +4,7 @@ from pygame import locals
 import socket
 
 
-HOST, PORT = 'home.ndirt.com', 1044
+HOST, PORT = 'ndirt.com', 1045
 
 sock = socket.socket( socket.AF_INET, socket.SOCK_STREAM )
 
@@ -14,8 +14,8 @@ pygame.joystick.init()
 joystickEnabled = False
 
 def AdjustThrottle( speed ):
-  speed = speed * -50+50
-  cmd = "throttle "+ str(round(speed))+" "
+  speed = speed * -50 + 50
+  cmd = "throttle "+ str(round(speed))+"!"
   #print cmd
   sock.sendall( cmd )
 
@@ -30,6 +30,7 @@ except pygame.error:
 
 try:
   sock.connect( (HOST,PORT) )
+  sock.sendall( "c" )
   while 1:
     for e in pygame.event.get():
       if e.type == pygame.locals.JOYAXISMOTION:
